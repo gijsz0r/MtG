@@ -104,4 +104,14 @@ public class Hand {
 		}
 		return creatures; 
 	}
+	
+	public int getNumberCreatures(){
+		int creatures = 0;
+		for (int i=0; i<cardsInHand.size(); i++) {
+			if (cardsInHand.get(i).getType() == 1) {
+				creatures++;
+			}
+		}
+		return creatures; 
+	}
 }

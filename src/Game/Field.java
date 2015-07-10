@@ -29,6 +29,10 @@ public class Field {
 		return this.creatures;
 	}
 	
+	public int getNumberCreatures(){
+		return this.creatures.size();
+	}
+	
 	public void untapAllPermanents() {
 		for (int i=0; i<this.lands.size(); i++) {
 			lands.get(i).untap();

@@ -17,6 +17,8 @@ import Cards.LandCard;
 
 public class Game {
 
+	public static final int P_ATTACK = 1, P_BLOCK = 2, P_PLAY = 3;
+
 	private Player player1;
 	private Player player2;
 	private int startingPlayer;
@@ -1193,146 +1195,152 @@ public class Game {
 		return newDeck;
 	}
 
-//	public ArrayList<CreatureCard> MCTSchooseAttackers(ArrayList<CreatureCard> possibleAttackers,
-//			ArrayList<CreatureCard> possibleBlockers) {
-//
-//		int size = possibleAttackers.size();
-//		Generator<Integer> combinatorics = this.newCombinations(size);
-//		int tmpcnt = 0;
-//		ArrayList<ArrayList<CreatureCard>> attackSets = new ArrayList<ArrayList<CreatureCard>>();
-//
-//		int tmpSize = combinatorics.getOriginalVector().getSize();
-//		for (ICombinatoricsVector<Integer> subSet : combinatorics) {
-//			ArrayList<CreatureCard> set = new ArrayList<CreatureCard>();
-//			ArrayList<Integer> indices = (ArrayList<Integer>) subSet.getVector();
-//			for (int i = 0; i < indices.size(); i++) {
-//				set.add(possibleAttackers.get(indices.get(i)));
-//			}
-//			attackSets.add(set);
-//		}
-//		int amountOfOptions = attackSets.size();
-//		double c = Math.sqrt(2);
-//		ArrayList<ArrayList<Integer>> scores = new ArrayList<ArrayList<Integer>>();
-//		for (int i = 0; i < amountOfOptions; i++) {
-//			scores.add(new ArrayList<Integer>());
-//		}
-//		int totalVisitCounter = 0;
-//
-//		while (totalVisitCounter < amountOfOptions * 1500) {
-//
-//			double tmpLog = Math.log(totalVisitCounter);
-//			Game newGame = this.copy();
-//			newGame.setPlayer1(new RandomPlayer(this.player1.getName()));
-//			newGame.setPlayer2(new RandomPlayer(this.player2.getName()));
-//
-//			double[] ucbValues = new double[amountOfOptions];
-//
-//			for (int i = 0; i < amountOfOptions; i++) {
-//
-//				if (scores.get(i).size() > 0) {
-//					double tmp = 0;
-//					for (int j = 0; j < scores.get(i).size(); j++) {
-//						tmp += scores.get(i).get(j);
-//					}
-//					double avg = tmp / scores.get(i).size();
-//					ucbValues[i] = avg + c * Math.sqrt((tmpLog / scores.get(i).size()));
-//				} else {
-//					ucbValues[i] = random.nextDouble() * 0.000001 + 1;
-//				}
-//			}
-//			int bestOption = 0;
-//			double bestScore = Integer.MIN_VALUE;
-//			for (int i = 0; i < amountOfOptions; i++) {
-//				if (ucbValues[i] > bestScore) {
-//					bestScore = ucbValues[i];
-//					bestOption = i;
-//				}
-//			}
-//
-//			if (activePlayer == 1) {
-//				ArrayList<CreatureCard> attackers = new ArrayList<CreatureCard>();
-//				ArrayList<ArrayList<CreatureCard>> blockers = new ArrayList<ArrayList<CreatureCard>>();
-//				for (int i = 0; i < attackSets.get(bestOption).size(); i++) {
-//					attackers.add((CreatureCard) attackSets.get(bestOption).get(i).copy());
-//				}
-//				if (attackers.size() > 0) {
-//					blockers = player2.chooseBlockers(attackers, this.field2.getCreatures());
-//				}
-//				newGame.resolve(attackers, blockers);
-//				newGame.setActivePlayer(2);
-//				newGame.run();
-//
-//				// System.out.println(attackers.size() + " attackers simulated
-//				// vs " + blockers.size() + " blockers. Result: " +
-//				// newGame.getWinner());
-//
-//				if (newGame.getWinner() == 1) {
-//					scores.get(bestOption).add(1);
-//				}
-//				if (newGame.getWinner() == 2) {
-//					scores.get(bestOption).add(-1);
-//				}
-//				if (newGame.getWinner() == 0) {
-//					scores.get(bestOption).add(0);
-//				}
-//			}
-//			if (activePlayer == 2) {
-//				ArrayList<CreatureCard> attackers = new ArrayList<CreatureCard>();
-//				ArrayList<ArrayList<CreatureCard>> blockers = new ArrayList<ArrayList<CreatureCard>>();
-//				for (int i = 0; i < attackSets.get(bestOption).size(); i++) {
-//					attackers.add((CreatureCard) attackSets.get(bestOption).get(i).copy());
-//				}
-//				if (attackers.size() > 0) {
-//					blockers = player1.chooseBlockers(attackers, this.field2.getCreatures());
-//				}
-//				newGame.resolve(attackers, blockers);
-//				newGame.setActivePlayer(1);
-//				newGame.run();
-//				// System.out.println(attackers.size() + " attackers simulated
-//				// vs " + blockers.size() + " blockers. Result: " +
-//				// newGame.getWinner());
-//				if (newGame.getWinner() == 1) {
-//					scores.get(bestOption).add(-1);
-//				}
-//				if (newGame.getWinner() == 2) {
-//					scores.get(bestOption).add(1);
-//				}
-//				if (newGame.getWinner() == 0) {
-//					scores.get(bestOption).add(0);
-//				}
-//			}
-//			totalVisitCounter++;
-//		}
-//		double[] ucbValues = new double[amountOfOptions];
-//
-//		for (int i = 0; i < amountOfOptions; i++) {
-//
-//			if (scores.get(i).size() > 0) {
-//				double tmp = 0;
-//				for (int j = 0; j < scores.get(i).size(); j++) {
-//					tmp += scores.get(i).get(j);
-//				}
-//				double avg = tmp / scores.get(i).size();
-//				ucbValues[i] = avg + c * Math.sqrt((Math.log(totalVisitCounter) / scores.get(i).size()));
-//			} else {
-//				ucbValues[i] = 100 + random.nextDouble() * 0.000001;
-//			}
-//		}
-//		int bestOption = 0;
-//		double bestScore = Integer.MIN_VALUE;
-//		for (int i = 0; i < amountOfOptions; i++) {
-//			if (ucbValues[i] > bestScore) {
-//				bestScore = ucbValues[i];
-//				bestOption = i;
-//			}
-//		}
-//
-//		// System.out.println("MCTS found attackers!");
-//		// System.out.println(this.isOver());
-//		// System.out.println("Attackers: " + attackSets.get(bestOption).size()
-//		// + "Lands: " + field2.getLands().size());
-//		return attackSets.get(bestOption);
-//	}
+	// public ArrayList<CreatureCard>
+	// MCTSchooseAttackers(ArrayList<CreatureCard> possibleAttackers,
+	// ArrayList<CreatureCard> possibleBlockers) {
+	//
+	// int size = possibleAttackers.size();
+	// Generator<Integer> combinatorics = this.newCombinations(size);
+	// int tmpcnt = 0;
+	// ArrayList<ArrayList<CreatureCard>> attackSets = new
+	// ArrayList<ArrayList<CreatureCard>>();
+	//
+	// int tmpSize = combinatorics.getOriginalVector().getSize();
+	// for (ICombinatoricsVector<Integer> subSet : combinatorics) {
+	// ArrayList<CreatureCard> set = new ArrayList<CreatureCard>();
+	// ArrayList<Integer> indices = (ArrayList<Integer>) subSet.getVector();
+	// for (int i = 0; i < indices.size(); i++) {
+	// set.add(possibleAttackers.get(indices.get(i)));
+	// }
+	// attackSets.add(set);
+	// }
+	// int amountOfOptions = attackSets.size();
+	// double c = Math.sqrt(2);
+	// ArrayList<ArrayList<Integer>> scores = new
+	// ArrayList<ArrayList<Integer>>();
+	// for (int i = 0; i < amountOfOptions; i++) {
+	// scores.add(new ArrayList<Integer>());
+	// }
+	// int totalVisitCounter = 0;
+	//
+	// while (totalVisitCounter < amountOfOptions * 1500) {
+	//
+	// double tmpLog = Math.log(totalVisitCounter);
+	// Game newGame = this.copy();
+	// newGame.setPlayer1(new RandomPlayer(this.player1.getName()));
+	// newGame.setPlayer2(new RandomPlayer(this.player2.getName()));
+	//
+	// double[] ucbValues = new double[amountOfOptions];
+	//
+	// for (int i = 0; i < amountOfOptions; i++) {
+	//
+	// if (scores.get(i).size() > 0) {
+	// double tmp = 0;
+	// for (int j = 0; j < scores.get(i).size(); j++) {
+	// tmp += scores.get(i).get(j);
+	// }
+	// double avg = tmp / scores.get(i).size();
+	// ucbValues[i] = avg + c * Math.sqrt((tmpLog / scores.get(i).size()));
+	// } else {
+	// ucbValues[i] = random.nextDouble() * 0.000001 + 1;
+	// }
+	// }
+	// int bestOption = 0;
+	// double bestScore = Integer.MIN_VALUE;
+	// for (int i = 0; i < amountOfOptions; i++) {
+	// if (ucbValues[i] > bestScore) {
+	// bestScore = ucbValues[i];
+	// bestOption = i;
+	// }
+	// }
+	//
+	// if (activePlayer == 1) {
+	// ArrayList<CreatureCard> attackers = new ArrayList<CreatureCard>();
+	// ArrayList<ArrayList<CreatureCard>> blockers = new
+	// ArrayList<ArrayList<CreatureCard>>();
+	// for (int i = 0; i < attackSets.get(bestOption).size(); i++) {
+	// attackers.add((CreatureCard) attackSets.get(bestOption).get(i).copy());
+	// }
+	// if (attackers.size() > 0) {
+	// blockers = player2.chooseBlockers(attackers, this.field2.getCreatures());
+	// }
+	// newGame.resolve(attackers, blockers);
+	// newGame.setActivePlayer(2);
+	// newGame.run();
+	//
+	// // System.out.println(attackers.size() + " attackers simulated
+	// // vs " + blockers.size() + " blockers. Result: " +
+	// // newGame.getWinner());
+	//
+	// if (newGame.getWinner() == 1) {
+	// scores.get(bestOption).add(1);
+	// }
+	// if (newGame.getWinner() == 2) {
+	// scores.get(bestOption).add(-1);
+	// }
+	// if (newGame.getWinner() == 0) {
+	// scores.get(bestOption).add(0);
+	// }
+	// }
+	// if (activePlayer == 2) {
+	// ArrayList<CreatureCard> attackers = new ArrayList<CreatureCard>();
+	// ArrayList<ArrayList<CreatureCard>> blockers = new
+	// ArrayList<ArrayList<CreatureCard>>();
+	// for (int i = 0; i < attackSets.get(bestOption).size(); i++) {
+	// attackers.add((CreatureCard) attackSets.get(bestOption).get(i).copy());
+	// }
+	// if (attackers.size() > 0) {
+	// blockers = player1.chooseBlockers(attackers, this.field2.getCreatures());
+	// }
+	// newGame.resolve(attackers, blockers);
+	// newGame.setActivePlayer(1);
+	// newGame.run();
+	// // System.out.println(attackers.size() + " attackers simulated
+	// // vs " + blockers.size() + " blockers. Result: " +
+	// // newGame.getWinner());
+	// if (newGame.getWinner() == 1) {
+	// scores.get(bestOption).add(-1);
+	// }
+	// if (newGame.getWinner() == 2) {
+	// scores.get(bestOption).add(1);
+	// }
+	// if (newGame.getWinner() == 0) {
+	// scores.get(bestOption).add(0);
+	// }
+	// }
+	// totalVisitCounter++;
+	// }
+	// double[] ucbValues = new double[amountOfOptions];
+	//
+	// for (int i = 0; i < amountOfOptions; i++) {
+	//
+	// if (scores.get(i).size() > 0) {
+	// double tmp = 0;
+	// for (int j = 0; j < scores.get(i).size(); j++) {
+	// tmp += scores.get(i).get(j);
+	// }
+	// double avg = tmp / scores.get(i).size();
+	// ucbValues[i] = avg + c * Math.sqrt((Math.log(totalVisitCounter) /
+	// scores.get(i).size()));
+	// } else {
+	// ucbValues[i] = 100 + random.nextDouble() * 0.000001;
+	// }
+	// }
+	// int bestOption = 0;
+	// double bestScore = Integer.MIN_VALUE;
+	// for (int i = 0; i < amountOfOptions; i++) {
+	// if (ucbValues[i] > bestScore) {
+	// bestScore = ucbValues[i];
+	// bestOption = i;
+	// }
+	// }
+	//
+	// // System.out.println("MCTS found attackers!");
+	// // System.out.println(this.isOver());
+	// // System.out.println("Attackers: " + attackSets.get(bestOption).size()
+	// // + "Lands: " + field2.getLands().size());
+	// return attackSets.get(bestOption);
+	// }
 
 	public ArrayList<Integer> MCTSChoose(int stage, Game game) {
 		Game simulation = game.copy();
@@ -1353,92 +1361,58 @@ public class Game {
 			ArrayList<CreatureCard> attackers = new ArrayList<CreatureCard>();
 			ArrayList<ArrayList<CreatureCard>> blockers = new ArrayList<ArrayList<CreatureCard>>();
 
-			while (bestNode.hasChildren()) {
-//				System.out.println(bestNode + "///");
-				bestNode = bestNode.selectBestChild(player % 2);
+			do {
+				// System.out.println(bestNode + "///");
 				player++;
-				if (simulation.getActivePlayer() == 1) {
-					if (bestNode.getStage() == 1) {
 
-						attackers = this.MCTSattack(bestNode.getMove(), simulation);
+				if (bestNode.getStage() == 1) {
 
-					} else if (bestNode.getStage() == 2) {
-						blockers = this.MCTSblock(bestNode.getMove(), simulation);
-						simulation.resolve(attackers, blockers);
-						attackers = null;
-						blockers = null;
-						simulation.setActivePlayer(2);
-						simulation.draw();
-					} else if (bestNode.getStage() == 3) {
-						ArrayList<CreatureCard> creatures = this.MCTScreatures(bestNode.getMove(), simulation);
-						for (int i = 0; i < creatures.size(); i++) {
-							simulation.field1.playCreature(creatures.get(i));
-						}
+					attackers = this.MCTSattack(bestNode.getMove(), simulation);
+
+				} else if (bestNode.getStage() == 2) {
+					blockers = this.MCTSblock(bestNode.getMove(), simulation);
+					simulation.resolve(attackers, blockers);
+					attackers = null;
+					blockers = null;
+				} else if (bestNode.getStage() == 3) {
+					ArrayList<CreatureCard> creatures = this.MCTScreatures(bestNode.getMove(), simulation);
+
+					Field field = simulation.getActivePlayer() == 1 ? simulation.field1 : simulation.field2;
+					for (int i = 0; i < creatures.size(); i++) {
+						field.playCreature(creatures.get(i));
 					}
+					simulation.setActivePlayer(simulation.getActivePlayer() % 2 + 1);
+					simulation.draw();
 				}
-
-				else if (simulation.getActivePlayer() == 2) {
-					if (bestNode.getStage() == 1) {
-						attackers = this.MCTSattack(bestNode.getMove(), simulation);
-
-					} else if (bestNode.getStage() == 2) {
-						blockers = this.MCTSblock(bestNode.getMove(), simulation);
-						simulation.resolve(attackers, blockers);
-						attackers = null;
-						blockers = null;
-						simulation.setActivePlayer(1);
-						simulation.draw();
-					} else if (bestNode.getStage() == 3) {
-						ArrayList<CreatureCard> creatures = this.MCTScreatures(bestNode.getMove(), simulation);
-						for (int i = 0; i < creatures.size(); i++) {
-							simulation.field1.playCreature(creatures.get(i));
-						}
-					}
-
+				if (bestNode.hasChildren()) {
+					bestNode = bestNode.selectBestChild(player % 2);
 				}
-			}
-			
+			} while (bestNode.hasChildren());
+
 			System.out.println("Selection chose: " + bestNode);
-
 
 			// expansion
 			Generator<Integer> choices = null;
-			ArrayList<CreatureCard> player1Creatures = simulation.field1.getCreatures();
-			ArrayList<CreatureCard> player2Creatures = simulation.field2.getCreatures();
-			ArrayList<CreatureCard> player1Hand = simulation.hand1.getCreatures();
-			ArrayList<CreatureCard> player2Hand = simulation.hand2.getCreatures();
-			
-			if (simulation.getActivePlayer() == 1) {
-				if (bestNode.getStage() == 1) {
-					if (bestNode.getMove() != null) {
-						if (bestNode.getMove().size() > 0 && player1Creatures.size() > 0) {
 
-							choices = this.newCombinations(player1Creatures.size());
-						}
-					}
-				} else if (bestNode.getStage() == 2) {
-					if (simulation.hand1.containsCreatures()) {
-						choices = this.newCombinations(player1Hand.size());
-					}
-				} else if (bestNode.getStage() == 3) {
-					if (simulation.field2.getCreatures().size() > 0) {
-						choices = this.newCombinations(player2Creatures.size());
-					}
+			Field[] fields = new Field[] { simulation.field1, simulation.field2 };
+			Hand[] hands = new Hand[] { simulation.hand1, simulation.hand2 };
+
+			int currentPlayer = simulation.getActivePlayer() - 1; // Transposing
+																	// for the
+																	// arrays
+																	// above
+			int enemyPlayer = simulation.getActivePlayer() % 2;
+			int enemyCreaturesField = fields[enemyPlayer].getNumberCreatures();
+			int playerCreaturesField = fields[currentPlayer].getNumberCreatures();
+
+			if (bestNode.getStage() == P_ATTACK) {
+				if (bestNode.getMove().size() > 0 && enemyCreaturesField > 0) {
+					choices = this.newCombinations(enemyCreaturesField);
 				}
-			} else if (simulation.getActivePlayer() == 2) {
-				if (bestNode.getStage() == 1) {
-					if (bestNode.getMove().size() > 0 && player1Creatures.size() > 0) {
-						choices = this.newCombinations(player1Creatures.size());
-					}
-				} else if (bestNode.getStage() == 2) {
-					if (simulation.hand1.containsCreatures()) {
-						choices = this.newCombinations(player2Hand.size());
-					}
-				} else if (bestNode.getStage() == 3) {
-					if (simulation.field2.getCreatures().size() > 0) {
-						choices = this.newCombinations(player1Creatures.size());
-					}
-				}
+			} else if (bestNode.getStage() == P_BLOCK && playerCreaturesField > 0) {
+				choices = this.newCombinations(playerCreaturesField);
+			} else if (bestNode.getStage() == P_PLAY && enemyCreaturesField > 0) {
+				choices = this.newCombinations(playerCreaturesField);
 			}
 
 			ArrayList<Node> children = new ArrayList<Node>();
@@ -1447,7 +1421,8 @@ public class Game {
 				newStage++;
 			}
 			// System.out.println(newStage);
-			Node noMoveNode = new Node(new ArrayList<Integer>(), newStage, bestNode, new ArrayList<Integer>(), initialUCT);
+			Node noMoveNode = new Node(new ArrayList<Integer>(), newStage, bestNode, new ArrayList<Integer>(),
+					initialUCT);
 			children.add(noMoveNode);
 			tree.add(noMoveNode);
 
@@ -1486,9 +1461,9 @@ public class Game {
 				}
 			}
 			bestNode.setChildren(children);
-			
-			
-//			System.out.println("Expansion made " + children.size() + " children!");
+
+			// System.out.println("Expansion made " + children.size() + "
+			// children!");
 
 			// TODO: select best/random child
 
@@ -1496,7 +1471,7 @@ public class Game {
 			simulation.setPlayer1(player1);
 			simulation.setPlayer2(player2);
 			int result = simulation.run();
-//			System.out.println("Playout, winner is: " + result);
+			// System.out.println("Playout, winner is: " + result);
 
 			// System.out.println("Show me the money! " + result);
 
@@ -1509,7 +1484,8 @@ public class Game {
 				tmpNode = (Node) tmpNode.getParent();
 				tmp++;
 			}
-			System.out.println("Backpropagate reached root? " + tmpNode.hasParent() + " the depth of the simulated node is " + tmp);
+			System.out.println("Backpropagate reached root? " + tmpNode.hasParent()
+					+ " the depth of the simulated node is " + tmp);
 
 		}
 		ArrayList<Integer> bestSet = new ArrayList<Integer>();
@@ -1518,6 +1494,24 @@ public class Game {
 
 		System.out.println(bestSet.size() + " is best set size. Size of tree: " + tree.size());
 		return bestSet;
+	}
+
+	private Hand getHand(int player) {
+		if (player == 1)
+			return hand1;
+		else if (player == 2)
+			return hand2;
+		else
+			throw new RuntimeException("We don fucked up bois - Hand");
+	}
+
+	private Field getField(int player) {
+		if (player == 1)
+			return field1;
+		else if (player == 2)
+			return field2;
+		else
+			throw new RuntimeException("We don fucked up bois - Field");
 	}
 
 	private ArrayList<CreatureCard> integerToCreature(ArrayList<Integer> integer, ArrayList<CreatureCard> creature) {
