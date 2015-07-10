@@ -8,6 +8,7 @@ import org.paukov.combinatorics.Factory;
 import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
 
+import AI.MonteCarloPlayer;
 import AI.Node;
 import AI.Player;
 import AI.RandomPlayer;
@@ -60,8 +61,6 @@ public class Game {
 			this.hand1.addCard(this.deck1.draw());
 			this.hand2.addCard(this.deck2.draw());
 		}
-
-		this.newCombinations(6);
 
 		this.hand2.addCard(this.deck2.draw());
 
@@ -1347,7 +1346,7 @@ public class Game {
 		RandomPlayer player1 = new RandomPlayer("Random Player 1");
 		RandomPlayer player2 = new RandomPlayer("Random Player 2");
 		this.tree = new ArrayList<Node>();
-		double initialUCT = 1 + random.nextDouble() * 0.00001;
+		double initialUCT = 100000 + random.nextDouble() * 0.00001;
 		Node root = new Node(new ArrayList<Integer>(), stage, null, new ArrayList<Integer>(), initialUCT);
 		this.tree.add(root);
 		int n = 0;
@@ -1404,15 +1403,18 @@ public class Game {
 			int enemyPlayer = simulation.getActivePlayer() % 2;
 			int enemyCreaturesField = fields[enemyPlayer].getNumberCreatures();
 			int playerCreaturesField = fields[currentPlayer].getNumberCreatures();
+			int enemyCreaturesHand = hands[enemyPlayer].getNumberCreatures();
+			int playerCreaturesHand = hands[currentPlayer].getNumberCreatures(); 
+					
 
 			if (bestNode.getStage() == P_ATTACK) {
 				if (bestNode.getMove().size() > 0 && enemyCreaturesField > 0) {
 					choices = this.newCombinations(enemyCreaturesField);
 				}
-			} else if (bestNode.getStage() == P_BLOCK && playerCreaturesField > 0) {
-				choices = this.newCombinations(playerCreaturesField);
+			} else if (bestNode.getStage() == P_BLOCK && playerCreaturesHand > 0) {
+				choices = this.newCombinations(playerCreaturesHand);
 			} else if (bestNode.getStage() == P_PLAY && enemyCreaturesField > 0) {
-				choices = this.newCombinations(playerCreaturesField);
+				choices = this.newCombinations(enemyCreaturesField);
 			}
 
 			ArrayList<Node> children = new ArrayList<Node>();
@@ -1421,11 +1423,7 @@ public class Game {
 				newStage++;
 			}
 			// System.out.println(newStage);
-			Node noMoveNode = new Node(new ArrayList<Integer>(), newStage, bestNode, new ArrayList<Integer>(),
-					initialUCT);
-			children.add(noMoveNode);
-			tree.add(noMoveNode);
-
+			
 			if (choices != null) {
 				if (bestNode.getStage() == 2) {
 					for (ICombinatoricsVector<Integer> subSet : choices) {
@@ -1460,6 +1458,16 @@ public class Game {
 					}
 				}
 			}
+			
+			if (children.isEmpty()) {
+
+				Node noMoveNode = new Node(new ArrayList<Integer>(), newStage, bestNode, new ArrayList<Integer>(),
+						initialUCT);
+				
+				children.add(noMoveNode);
+				tree.add(noMoveNode);
+
+			}
 			bestNode.setChildren(children);
 
 			// System.out.println("Expansion made " + children.size() + "
@@ -1484,7 +1492,7 @@ public class Game {
 				tmpNode = (Node) tmpNode.getParent();
 				tmp++;
 			}
-			System.out.println("Backpropagate reached root? " + tmpNode.hasParent()
+			System.out.println("Backpropagate reached root? " + !tmpNode.hasParent()
 					+ " the depth of the simulated node is " + tmp);
 
 		}
@@ -1537,10 +1545,11 @@ public class Game {
 	private ArrayList<CreatureCard> MCTScreatures(ArrayList<Integer> move, Game simulation) {
 		ArrayList<CreatureCard> options = null;
 		ArrayList<CreatureCard> creatures = new ArrayList<CreatureCard>();
+		
 		if (simulation.getActivePlayer() == 1) {
 			options = simulation.hand1.getCreatures();
 		} else if (simulation.getActivePlayer() == 2) {
-			options = simulation.hand1.getCreatures();
+			options = simulation.hand2.getCreatures();
 		}
 
 		for (int i = 0; i < move.size(); i++) {
@@ -1718,16 +1727,17 @@ public class Game {
 		}
 	}
 
-	// public static void main(String args[]) {
-	// ArrayList<CreatureCard> attackers = new ArrayList<CreatureCard>();
-	// ArrayList<CreatureCard> blockers = new ArrayList<CreatureCard>();
-	// attackers.add(new CreatureCard("Test", 1, 1, 1));
-	// attackers.add(new CreatureCard("Test", 1, 1, 1));
-	// attackers.add(new CreatureCard("Test", 1, 1, 1));
-	//
-	// Game game = new Game(new HumanPlayer("henk"), new HumanPlayer("karel"),
-	// 1);
-	// game.MCTSchooseAttackers(attackers, blockers);
-	//
-	// }
+	 public static void main(String args[]) {
+		 Player MCTSBoiz = new MonteCarloPlayer("Pimp");
+		 Player RandomBoiz = new RandomPlayer("Scrubbie");
+		 
+		 
+		 Game game = new Game(MCTSBoiz, RandomBoiz, 1);
+		 game.setLife1(100);
+		 game.setLife2(1);
+		 Field field1boiz = new Field();
+		 field1boiz.playCreature(new CreatureCard("Piemel", 0, 100, 100));
+		 game.setField1();
+		 
+	 }
 }

@@ -1,6 +1,7 @@
 package AI;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 public class Node {
@@ -23,6 +24,11 @@ public class Node {
 		this.children = new ArrayList<Node>();
 		this.random = new Random();
 
+	}
+	
+	@Override
+	public String toString() {
+		return Arrays.toString(move.toArray()) + " , and move is : "  + stage;
 	}
 
 	public ArrayList<Integer> getMove() {
