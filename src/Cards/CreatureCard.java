@@ -1,7 +1,7 @@
 package Cards;
 
 
-public class CreatureCard extends Card{
+public class CreatureCard implements Card{
 
 	private int manaCost;
 	private int power;

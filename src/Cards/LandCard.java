@@ -1,7 +1,7 @@
 package Cards;
 
 
-public class LandCard extends Card{
+public class LandCard implements Card{
 
 	private int manaCost;
 	private int power;

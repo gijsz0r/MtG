@@ -176,8 +176,7 @@ public class Game {
 		ArrayList<CreatureCard> playableCreatures = new ArrayList<CreatureCard>();
 
 		for (int i = 0; i < possibleCards.size(); i++) {
-			if (possibleCards.get(i).getManaCost() < mana && possibleCards.get(i).getType() == 1) {
-
+			if (possibleCards.get(i).getManaCost() <= mana && possibleCards.get(i).getType() == 1) {
 				playableCreatures.add((CreatureCard) possibleCards.get(i));
 			}
 
@@ -1360,20 +1359,21 @@ public class Game {
 			ArrayList<CreatureCard> attackers = new ArrayList<CreatureCard>();
 			ArrayList<ArrayList<CreatureCard>> blockers = new ArrayList<ArrayList<CreatureCard>>();
 
+			boolean newChildFound = false;
 			do {
 				// System.out.println(bestNode + "///");
 				player++;
 
-				if (bestNode.getStage() == 1) {
+				if (bestNode.getStage() == P_ATTACK) {
 
 					attackers = this.MCTSattack(bestNode.getMove(), simulation);
 
-				} else if (bestNode.getStage() == 2) {
+				} else if (bestNode.getStage() == P_BLOCK) {
 					blockers = this.MCTSblock(bestNode.getMove(), simulation);
 					simulation.resolve(attackers, blockers);
 					attackers = null;
 					blockers = null;
-				} else if (bestNode.getStage() == 3) {
+				} else if (bestNode.getStage() == P_PLAY) {
 					ArrayList<CreatureCard> creatures = this.MCTScreatures(bestNode.getMove(), simulation);
 
 					Field field = simulation.getActivePlayer() == 1 ? simulation.field1 : simulation.field2;
@@ -1383,93 +1383,115 @@ public class Game {
 					simulation.setActivePlayer(simulation.getActivePlayer() % 2 + 1);
 					simulation.draw();
 				}
+				
+				
 				if (bestNode.hasChildren()) {
+					newChildFound = true;
 					bestNode = bestNode.selectBestChild(player % 2);
+				} else {
+					newChildFound = false;
 				}
-			} while (bestNode.hasChildren());
+			} while (newChildFound);
 
 			System.out.println("Selection chose: " + bestNode);
 
 			// expansion
-			Generator<Integer> choices = null;
-
-			Field[] fields = new Field[] { simulation.field1, simulation.field2 };
-			Hand[] hands = new Hand[] { simulation.hand1, simulation.hand2 };
-
-			int currentPlayer = simulation.getActivePlayer() - 1; // Transposing
-																	// for the
-																	// arrays
-																	// above
-			int enemyPlayer = simulation.getActivePlayer() % 2;
-			int enemyCreaturesField = fields[enemyPlayer].getNumberCreatures();
-			int playerCreaturesField = fields[currentPlayer].getNumberCreatures();
-			int enemyCreaturesHand = hands[enemyPlayer].getNumberCreatures();
-			int playerCreaturesHand = hands[currentPlayer].getNumberCreatures(); 
-					
-
-			if (bestNode.getStage() == P_ATTACK) {
-				if (bestNode.getMove().size() > 0 && enemyCreaturesField > 0) {
-					choices = this.newCombinations(enemyCreaturesField);
-				}
-			} else if (bestNode.getStage() == P_BLOCK && playerCreaturesHand > 0) {
-				choices = this.newCombinations(playerCreaturesHand);
-			} else if (bestNode.getStage() == P_PLAY && enemyCreaturesField > 0) {
-				choices = this.newCombinations(enemyCreaturesField);
-			}
-
-			ArrayList<Node> children = new ArrayList<Node>();
-			int newStage = bestNode.getStage() % 3;
-			if (bestNode.hasParent()) {
-				newStage++;
-			}
-			// System.out.println(newStage);
+			if(!simulation.isOver()){
 			
-			if (choices != null) {
-				if (bestNode.getStage() == 2) {
-					for (ICombinatoricsVector<Integer> subSet : choices) {
-						ArrayList<Integer> integers = (ArrayList<Integer>) subSet.getVector();
-						int total = 0;
-						int max = 0;
-						for (int i = 0; i < integers.size(); i++) {
-							if (simulation.getActivePlayer() == 1) {
-								total += simulation.hand1.getCreatures().get(i).getManaCost();
-								max = simulation.field1.getUntappedLands();
-							} else if (simulation.getActivePlayer() == 2) {
-								total += simulation.hand2.getCreatures().get(i).getManaCost();
-								max = simulation.field2.getUntappedLands();
-
+				Generator<Integer> choices = null;
+	
+				Field[] fields = new Field[] { simulation.field1, simulation.field2 };
+				Hand[] hands = new Hand[] { simulation.hand1, simulation.hand2 };
+	
+				int currentPlayer = simulation.getActivePlayer() - 1; // Transposing
+																		// for the
+																		// arrays
+																		// above
+				int enemyPlayer = simulation.getActivePlayer() % 2;
+						
+				int previousStage = bestNode.getStage();
+				
+				if(!bestNode.hasParent()){
+					previousStage--;
+					if(previousStage == 0){
+						previousStage = 3;
+						int tmpPlayer = enemyPlayer;
+						enemyPlayer = currentPlayer;
+						currentPlayer = tmpPlayer;
+					}
+				}
+				
+				int enemyCreaturesField = fields[enemyPlayer].getNumberCreatures();
+				int playerCreaturesField = fields[currentPlayer].getNumberCreatures();
+				int enemyCreaturesHand = hands[enemyPlayer].getNumberCreatures();
+				int playerCreaturesHand = hands[currentPlayer].getNumberCreatures(); 
+				if(currentPlayer == 1 && enemyCreaturesField == 1){
+					@SuppressWarnings("unused")
+					boolean potato = true;
+				}
+				if (previousStage == P_ATTACK) {
+					if (bestNode.getMove().size() > 0 && enemyCreaturesField > 0) {
+						choices = this.newCombinations(enemyCreaturesField);
+					}
+				} else if (previousStage == P_BLOCK && playerCreaturesHand > 0) {
+					choices = this.newCombinations(playerCreaturesHand);
+				} else if (previousStage == P_PLAY && playerCreaturesField > 0) {
+					choices = this.newCombinations(playerCreaturesField);
+				}
+	
+				ArrayList<Node> children = new ArrayList<Node>();
+				int newStage = bestNode.getStage() % 3;
+				if (bestNode.hasParent()) {
+					newStage++;
+				}
+				// System.out.println(newStage);
+				
+				if (choices != null) {
+					if (bestNode.getStage() == 2) {
+						for (ICombinatoricsVector<Integer> subSet : choices) {
+							ArrayList<Integer> integers = (ArrayList<Integer>) subSet.getVector();
+							int total = 0;
+							int max = 0;
+							for (int i = 0; i < integers.size(); i++) {
+								if (simulation.getActivePlayer() == 1) {
+									total += simulation.hand1.getCreatures().get(integers.get(i)).getManaCost();
+									max = simulation.field1.getUntappedLands();
+								} else if (simulation.getActivePlayer() == 2) {
+									total += simulation.hand2.getCreatures().get(integers.get(i)).getManaCost();
+									max = simulation.field2.getUntappedLands();
+	
+								}
 							}
+							if (total <= max) {
+								Node newNode = new Node(integers, newStage, bestNode, new ArrayList<Integer>(), initialUCT);
+								tree.add(newNode);
+								children.add(newNode);
+							}
+	
 						}
-						if (total <= max) {
-							Node newNode = new Node(integers, newStage, bestNode, new ArrayList<Integer>(), initialUCT);
+					} else {
+	
+						for (ICombinatoricsVector<Integer> subSet : choices) {
+							ArrayList<Integer> indices = (ArrayList<Integer>) subSet.getVector();
+	
+							Node newNode = new Node(indices, newStage, bestNode, new ArrayList<Integer>(), initialUCT);
 							tree.add(newNode);
 							children.add(newNode);
 						}
-
-					}
-				} else {
-
-					for (ICombinatoricsVector<Integer> subSet : choices) {
-						ArrayList<Integer> indices = (ArrayList<Integer>) subSet.getVector();
-
-						Node newNode = new Node(indices, newStage, bestNode, new ArrayList<Integer>(), initialUCT);
-						tree.add(newNode);
-						children.add(newNode);
 					}
 				}
-			}
-			
-			if (children.isEmpty()) {
-
-				Node noMoveNode = new Node(new ArrayList<Integer>(), newStage, bestNode, new ArrayList<Integer>(),
-						initialUCT);
 				
-				children.add(noMoveNode);
-				tree.add(noMoveNode);
-
+				if (children.isEmpty()) {
+	
+					Node noMoveNode = new Node(new ArrayList<Integer>(), newStage, bestNode, new ArrayList<Integer>(),
+							initialUCT);
+					
+					children.add(noMoveNode);
+					tree.add(noMoveNode);
+	
+				}
+				bestNode.setChildren(children);
 			}
-			bestNode.setChildren(children);
-
 			// System.out.println("Expansion made " + children.size() + "
 			// children!");
 
@@ -1600,6 +1622,7 @@ public class Game {
 		// player " + simulation.getActivePlayer() + " has. The amount of
 		// attackers that MCTS chose was " + move.size());
 		for (int i = 0; i < move.size(); i++) {
+//			System.out.println("hERE");
 			creatures.add(options.get(move.get(i)));
 		}
 
@@ -1734,10 +1757,26 @@ public class Game {
 		 
 		 Game game = new Game(MCTSBoiz, RandomBoiz, 1);
 		 game.setLife1(100);
-		 game.setLife2(1);
+		 game.setLife2(5);
+		 
 		 Field field1boiz = new Field();
+		 Field field2boiz = new Field();
+
+		 Hand hand1 = new Hand();
+//		 hand1.addCard(new CreatureCard("Ball", 0, 1, 1));
 		 field1boiz.playCreature(new CreatureCard("Piemel", 0, 100, 100));
-		 game.setField1();
+
+		 Hand hand2 = new Hand();
+		 hand1.addCard(new CreatureCard("Ball", 0, 1, 1));
+//		 field2boiz.playCreature(new CreatureCard("Piemel", 0, 100, 100));
+
+		 game.setField1(field1boiz);
+		 game.setHand1(hand1);
+		 
+		 game.setField2(field2boiz);
+		 game.setHand2(hand2);
+		 
+		 game.run();
 		 
 	 }
 }

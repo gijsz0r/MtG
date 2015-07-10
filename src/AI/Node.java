@@ -88,6 +88,11 @@ public class Node {
 	}
 
 	public Node selectBestChild(int currentPlayer) {
+		
+		// Pick a random child if we haven't gone through the node X times
+		if(scores.size() < children.size() * 20)
+			return children.get(random.nextInt(children.size()));
+		
 		Node bestChild = null;
 		if (currentPlayer == 0) {
 			double bestUCT = Double.MIN_VALUE;
