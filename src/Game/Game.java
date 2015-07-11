@@ -1374,12 +1374,24 @@ public class Game {
 					attackers = null;
 					blockers = null;
 				} else if (bestNode.getStage() == P_PLAY) {
+					
+					Hand hand = simulation.getActivePlayer() == 1 ? simulation.hand1 : simulation.hand2;
+					Field field = simulation.getActivePlayer() == 1 ? simulation.field1 : simulation.field2;
+					
+					if (hand.containsLand())
+					{
+						field.playLand(hand.playLand());
+						
+					}
 					ArrayList<CreatureCard> creatures = this.MCTScreatures(bestNode.getMove(), simulation);
 
-					Field field = simulation.getActivePlayer() == 1 ? simulation.field1 : simulation.field2;
 					for (int i = 0; i < creatures.size(); i++) {
 						field.playCreature(creatures.get(i));
 					}
+					for (int i = 0; i < creatures.size(); i++) {
+						hand.removeCard(creatures.get(i));
+					}
+					
 					simulation.setActivePlayer(simulation.getActivePlayer() % 2 + 1);
 					simulation.draw();
 				}
@@ -1425,10 +1437,7 @@ public class Game {
 				int playerCreaturesField = fields[currentPlayer].getNumberCreatures();
 				int enemyCreaturesHand = hands[enemyPlayer].getNumberCreatures();
 				int playerCreaturesHand = hands[currentPlayer].getNumberCreatures(); 
-				if(currentPlayer == 1 && enemyCreaturesField == 1){
-					@SuppressWarnings("unused")
-					boolean potato = true;
-				}
+			
 				if (previousStage == P_ATTACK) {
 					if (bestNode.getMove().size() > 0 && enemyCreaturesField > 0) {
 						choices = this.newCombinations(enemyCreaturesField);
@@ -1450,6 +1459,7 @@ public class Game {
 					if (bestNode.getStage() == 2) {
 						for (ICombinatoricsVector<Integer> subSet : choices) {
 							ArrayList<Integer> integers = (ArrayList<Integer>) subSet.getVector();
+							
 							int total = 0;
 							int max = 0;
 							for (int i = 0; i < integers.size(); i++) {
@@ -1459,7 +1469,6 @@ public class Game {
 								} else if (simulation.getActivePlayer() == 2) {
 									total += simulation.hand2.getCreatures().get(integers.get(i)).getManaCost();
 									max = simulation.field2.getUntappedLands();
-	
 								}
 							}
 							if (total <= max) {
@@ -1532,7 +1541,7 @@ public class Game {
 		else if (player == 2)
 			return hand2;
 		else
-			throw new RuntimeException("We don fucked up bois - Hand");
+			throw new RuntimeException("We don fucked up bois ;) - Hand");
 	}
 
 	private Field getField(int player) {
