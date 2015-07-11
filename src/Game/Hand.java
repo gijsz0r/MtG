@@ -98,7 +98,7 @@ public class Hand {
 	public ArrayList<CreatureCard> getCreatures() {
 		ArrayList<CreatureCard> creatures = new ArrayList<CreatureCard>();
 		for (int i=0; i<cardsInHand.size(); i++) {
-			if (cardsInHand.get(i).getType() == 1) {
+			if (cardsInHand.get(i) instanceof CreatureCard) {
 				creatures.add((CreatureCard) cardsInHand.get(i));
 			}
 		}

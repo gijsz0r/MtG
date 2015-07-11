@@ -57,6 +57,7 @@ public class Deck {
 	
 	public Deck copy() {
 		Deck newDeck = new Deck();
+		newDeck.emptyDeck();
 		for (int i=0; i<this.deck.size(); i++) {
 			newDeck.add(deck.get(i).copy());
 		}
