@@ -47,8 +47,9 @@ public class Node {
 		return uct;
 	}
 
-	public void updateUCT(int totalVisitCounter) {
+	public void updateUCT(int totalVisitCounter, double c_constant) {
 		int avg = 0;
+		c = c_constant;
 		for (int i = 0; i < scores.size(); i++) {
 			avg += scores.get(i);
 		}

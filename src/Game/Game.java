@@ -38,8 +38,10 @@ public class Game {
 	private Random random;
 	private ArrayList<Node> tree;
 	private ArrayList<CreatureCard> attackers;
+	private int initial_UCT;
+	private double c_constant;
 
-	public Game(Player player1, Player player2, int startingPlayer) {
+	public Game(Player player1, Player player2, int startingPlayer, int initial_UCT, double c_constant) {
 		this.player1 = player1;
 		this.player2 = player2;
 		field1 = new Field();
@@ -54,6 +56,8 @@ public class Game {
 		life2 = 20;
 		tree = new ArrayList<Node>();
 
+		this.initial_UCT = initial_UCT;
+		this.c_constant = c_constant;
 		random = new Random();
 
 		this.startingPlayer = startingPlayer;
@@ -82,15 +86,28 @@ public class Game {
 		// System.out.println("Game over! The winner is player " +
 		// this.getWinner());
 
-		return (this.getWinner());
+		return (this.getWinnerNumber());
 
 	}
 
 	private void draw() {
+		boolean deckEmpty = false;
 		if (activePlayer == 1) {
-			this.hand1.addCard(this.deck1.draw());
+			if (deck1.getSize() > 0) {
+				this.hand1.addCard(this.deck1.draw());
+			} else {
+				deckEmpty = true;
+			}
 		} else if (activePlayer == 2) {
-			this.hand2.addCard(this.deck2.draw());
+			if (deck2.getSize() > 0) {
+				this.hand2.addCard(this.deck2.draw());
+			} else {
+				deckEmpty = true;
+			}
+		}
+
+		if (deckEmpty == true) {
+			System.out.println("Wee wo wee wo wee wo");
 		}
 	}
 
@@ -154,7 +171,8 @@ public class Game {
 				// singleToDoubleArray(integerToCreature(this.MCTSChoose(2,
 				// this), enemyField.getCreatures()),
 				// field.getCreatures().size());
-				blockers = this.MonteCarloChooseBlockers(attackers, enemyField.getCreatures());
+				// blockers = this.MonteCarloChooseBlockers(attackers,
+				// enemyField.getCreatures());
 			} else {
 				blockers = enemyPlayer.chooseBlockers(attackers, enemyField.getCreatures());
 			}
@@ -196,89 +214,95 @@ public class Game {
 					// System.out.println("Playing land! :)");
 					this.field1.playLand(this.hand1.playLand());
 				}
-				if (player1.isMCTS()) {
-					ArrayList<CreatureCard> creaturesToPlay = integerToCreature(this.MCTSChoose(3, this),
-							this.hand1.getCreatures());
-					for (int i = 0; i < creaturesToPlay.size(); i++) {
-						System.out.println("Creatures: " + creaturesToPlay.size() + " current Creature: "
-								+ creaturesToPlay.get(i).getName() + " mana: " + field1.getUntappedLands());
-						field1.tapLands(creaturesToPlay.get(i).getManaCost());
-						field1.playCreature(creaturesToPlay.get(i));
-						hand1.removeCard(creaturesToPlay.get(i));
+				// if (player1.isMCTS()) {
+				// ArrayList<CreatureCard> creaturesToPlay =
+				// integerToCreature(this.MCTSChoose(3, this),
+				// this.hand1.getCreatures());
+				// for (int i = 0; i < creaturesToPlay.size(); i++) {
+				// // System.out.println("Creatures: " +
+				// // creaturesToPlay.size() + " current Creature: "
+				// // + creaturesToPlay.get(i).getName() + " mana: " +
+				// // field1.getUntappedLands());
+				// field1.tapLands(creaturesToPlay.get(i).getManaCost());
+				// field1.playCreature(creaturesToPlay.get(i));
+				// hand1.removeCard(creaturesToPlay.get(i));
+				// }
+				//
+				// } else {
+				while (true) {
+					ArrayList<CreatureCard> playableCreatures = this.findPlayableCreatures(hand1.getCardsInHand(),
+							field1.getUntappedLands());
+					if (playableCreatures.size() == 0) {
+						break;
+					}
+					int creatureToPlay = -1;
+					if (player1.isMCTS()) {
+
+						for (int i = 0; i < playableCreatures.size(); i++) {
+							// System.out.println(playableCreatures.get(i).getName());
+						}
+						creatureToPlay = MonteCarloPlayCreature(playableCreatures);
+					} else {
+						creatureToPlay = player1.playCreature(playableCreatures);
+					}
+					if (creatureToPlay == -1) {
+						break;
+					} else {
+						CreatureCard creature = playableCreatures.get(creatureToPlay);
+						field1.tapLands(creature.getManaCost());
+						hand1.removeCard(creature);
+						field1.playCreature(creature);
 					}
 
-				} else {
-					while (true) {
-						ArrayList<CreatureCard> playableCreatures = this.findPlayableCreatures(hand1.getCardsInHand(),
-								field1.getUntappedLands());
-						if (playableCreatures.size() == 0) {
-							break;
-						}
-						int creatureToPlay = -1;
-						if (player1.isMCTS()) {
-
-							for (int i = 0; i < playableCreatures.size(); i++) {
-								// System.out.println(playableCreatures.get(i).getName());
-							}
-							creatureToPlay = MonteCarloPlayCreature(playableCreatures);
-						} else {
-							creatureToPlay = player1.playCreature(playableCreatures);
-						}
-						if (creatureToPlay == -1) {
-							break;
-						} else {
-							CreatureCard creature = playableCreatures.get(creatureToPlay);
-							field1.tapLands(creature.getManaCost());
-							hand1.removeCard(creature);
-							field1.playCreature(creature);
-						}
-
-					}
 				}
+				// }
 			} else if (this.activePlayer == 2) {
 				if (this.hand2.containsLand()) {
 					// System.out.println("Playing land! :)");
 					this.field2.playLand(this.hand2.playLand());
 				}
-				if (player2.isMCTS()) {
-					ArrayList<CreatureCard> creaturesToPlay = integerToCreature(this.MCTSChoose(3, this),
-							this.hand2.getCreatures());
-					for (int i = 0; i < creaturesToPlay.size(); i++) {
-						System.out.println("Creatures: " + creaturesToPlay.size() + " current Creature: "
-								+ creaturesToPlay.get(i).getName() + " mana: " + field2.getUntappedLands());
-						field2.tapLands(creaturesToPlay.get(i).getManaCost());
-						field2.playCreature(creaturesToPlay.get(i));
-						hand2.removeCard(creaturesToPlay.get(i));
+				// if (player2.isMCTS()) {
+				// ArrayList<CreatureCard> creaturesToPlay =
+				// integerToCreature(this.MCTSChoose(3, this),
+				// this.hand2.getCreatures());
+				// for (int i = 0; i < creaturesToPlay.size(); i++) {
+				// // System.out.println("Creatures: " +
+				// // creaturesToPlay.size() + " current Creature: "
+				// // + creaturesToPlay.get(i).getName() + " mana: " +
+				// // field2.getUntappedLands());
+				// field2.tapLands(creaturesToPlay.get(i).getManaCost());
+				// field2.playCreature(creaturesToPlay.get(i));
+				// hand2.removeCard(creaturesToPlay.get(i));
+				// }
+				// } else {
+				while (true) {
+					ArrayList<CreatureCard> playableCreatures = this.findPlayableCreatures(hand2.getCardsInHand(),
+							field2.getUntappedLands());
+
+					if (playableCreatures.size() == 0) {
+						break;
 					}
-				} else {
-					while (true) {
-						ArrayList<CreatureCard> playableCreatures = this.findPlayableCreatures(hand2.getCardsInHand(),
-								field2.getUntappedLands());
+					int creatureToPlay = -1;
+					if (player1.isMCTS()) {
+						creatureToPlay = MonteCarloPlayCreature(playableCreatures);
+					} else {
+						creatureToPlay = player2.playCreature(playableCreatures);
+					}
+					if (creatureToPlay == -1) {
+						break;
+					} else {
+						CreatureCard creature = playableCreatures.get(creatureToPlay);
+						field2.tapLands(creature.getManaCost());
+						hand2.removeCard(creature);
+						field2.playCreature(creature);
 
-						if (playableCreatures.size() == 0) {
-							break;
-						}
-						int creatureToPlay = -1;
-						if (player1.isMCTS()) {
-							creatureToPlay = MonteCarloPlayCreature(playableCreatures);
-						} else {
-							creatureToPlay = player2.playCreature(playableCreatures);
-						}
-						if (creatureToPlay == -1) {
-							break;
-						} else {
-							CreatureCard creature = playableCreatures.get(creatureToPlay);
-							field2.tapLands(creature.getManaCost());
-							hand2.removeCard(creature);
-							field2.playCreature(creature);
-
-						}
 					}
 				}
 			}
-
 		}
+
 	}
+	// }
 
 	private void resolve(ArrayList<CreatureCard> attackers, ArrayList<ArrayList<CreatureCard>> blockers) {
 
@@ -390,7 +414,8 @@ public class Game {
 	}
 
 	public Game copy() {
-		Game newGame = new Game(this.player1.copy(), this.player2.copy(), this.startingPlayer);
+		Game newGame = new Game(this.player1.copy(), this.player2.copy(), this.startingPlayer, this.initial_UCT,
+				this.c_constant);
 		newGame.setActivePlayer(this.activePlayer);
 		newGame.setField1(this.field1.copy());
 		newGame.setField2(this.field2.copy());
@@ -463,13 +488,28 @@ public class Game {
 		this.player2 = copy;
 	}
 
-	public int getWinner() {
+	public int getWinnerNumber() {
+		int winner = 0;
 		if (!(life1 > 0) || !(deck1.getSize() > 0)) {
-			return 2;
+			winner = 2;
 		} else if (!(life2 > 0) || !(deck2.getSize() > 0)) {
+			winner = 1;
+		}
+		return winner;
+	}
+
+	// 1-based!
+	public int getWinner(int playerToEvaluate) {
+		int winner = 0;
+		if (!(life1 > 0) || !(deck1.getSize() > 0)) {
+			winner = 2;
+		} else if (!(life2 > 0) || !(deck2.getSize() > 0)) {
+			winner = 1;
+		}
+		if (playerToEvaluate == winner) {
 			return 1;
 		} else
-			return 0;
+			return -1;
 	}
 
 	public Player getPlayer1() {
@@ -525,13 +565,13 @@ public class Game {
 					newGame.field1.playCreature(possibleCreatures.get(bestOption));
 					newGame.setActivePlayer(2);
 					newGame.run();
-					if (newGame.getWinner() == 1) {
+					if (newGame.getWinnerNumber() == 1) {
 						scores.get(bestOption).add(1);
 					}
-					if (newGame.getWinner() == 2) {
+					if (newGame.getWinnerNumber() == 2) {
 						scores.get(bestOption).add(-1);
 					}
-					if (newGame.getWinner() == 0) {
+					if (newGame.getWinnerNumber() == 0) {
 						scores.get(bestOption).add(0);
 					}
 				}
@@ -539,13 +579,13 @@ public class Game {
 					newGame.field2.playCreature(possibleCreatures.get(bestOption));
 					newGame.setActivePlayer(1);
 					newGame.run();
-					if (newGame.getWinner() == 2) {
+					if (newGame.getWinnerNumber() == 2) {
 						scores.get(bestOption).add(1);
 					}
-					if (newGame.getWinner() == 1) {
+					if (newGame.getWinnerNumber() == 1) {
 						scores.get(bestOption).add(-1);
 					}
-					if (newGame.getWinner() == 0) {
+					if (newGame.getWinnerNumber() == 0) {
 						scores.get(bestOption).add(0);
 					}
 				}
@@ -637,13 +677,13 @@ public class Game {
 					newGame.hand2.set(determinizations.get(currentIteration));
 					newGame.setActivePlayer(2);
 					newGame.run();
-					if (newGame.getWinner() == 1) {
+					if (newGame.getWinnerNumber() == 1) {
 						scores.get(currentIteration).get(bestOption).add(1);
 					}
-					if (newGame.getWinner() == 2) {
+					if (newGame.getWinnerNumber() == 2) {
 						scores.get(currentIteration).get(bestOption).add(-1);
 					}
-					if (newGame.getWinner() == 0) {
+					if (newGame.getWinnerNumber() == 0) {
 						scores.get(currentIteration).get(bestOption).add(0);
 					}
 				}
@@ -654,13 +694,13 @@ public class Game {
 					newGame.hand1.set(determinizations.get(currentIteration));
 					newGame.setActivePlayer(1);
 					newGame.run();
-					if (newGame.getWinner() == 2) {
+					if (newGame.getWinnerNumber() == 2) {
 						scores.get(currentIteration).get(bestOption).add(1);
 					}
-					if (newGame.getWinner() == 1) {
+					if (newGame.getWinnerNumber() == 1) {
 						scores.get(currentIteration).get(bestOption).add(-1);
 					}
-					if (newGame.getWinner() == 0) {
+					if (newGame.getWinnerNumber() == 0) {
 						scores.get(currentIteration).get(bestOption).add(0);
 					}
 				}
@@ -827,13 +867,13 @@ public class Game {
 				newGame.resolve(attackers, blockers);
 				newGame.setActivePlayer(2);
 				newGame.run();
-				if (newGame.getWinner() == 1) {
+				if (newGame.getWinnerNumber() == 1) {
 					scores.get(bestOption).add(-1);
 				}
-				if (newGame.getWinner() == 2) {
+				if (newGame.getWinnerNumber() == 2) {
 					scores.get(bestOption).add(1);
 				}
-				if (newGame.getWinner() == 0) {
+				if (newGame.getWinnerNumber() == 0) {
 					scores.get(bestOption).add(0);
 				}
 			}
@@ -856,13 +896,13 @@ public class Game {
 				newGame.resolve(attackers, blockers);
 				newGame.setActivePlayer(1);
 				newGame.run();
-				if (newGame.getWinner() == 1) {
+				if (newGame.getWinnerNumber() == 1) {
 					scores.get(bestOption).add(1);
 				}
-				if (newGame.getWinner() == 2) {
+				if (newGame.getWinnerNumber() == 2) {
 					scores.get(bestOption).add(-1);
 				}
-				if (newGame.getWinner() == 0) {
+				if (newGame.getWinnerNumber() == 0) {
 					scores.get(bestOption).add(0);
 				}
 			}
@@ -998,13 +1038,13 @@ public class Game {
 				// vs " + blockers.size() + " blockers. Result: " +
 				// newGame.getWinner());
 
-				if (newGame.getWinner() == 1) {
+				if (newGame.getWinnerNumber() == 1) {
 					scores.get(bestOption).add(1);
 				}
-				if (newGame.getWinner() == 2) {
+				if (newGame.getWinnerNumber() == 2) {
 					scores.get(bestOption).add(-1);
 				}
-				if (newGame.getWinner() == 0) {
+				if (newGame.getWinnerNumber() == 0) {
 					scores.get(bestOption).add(0);
 				}
 			}
@@ -1023,13 +1063,13 @@ public class Game {
 				// System.out.println(attackers.size() + " attackers simulated
 				// vs " + blockers.size() + " blockers. Result: " +
 				// newGame.getWinner());
-				if (newGame.getWinner() == 1) {
+				if (newGame.getWinnerNumber() == 1) {
 					scores.get(bestOption).add(-1);
 				}
-				if (newGame.getWinner() == 2) {
+				if (newGame.getWinnerNumber() == 2) {
 					scores.get(bestOption).add(1);
 				}
-				if (newGame.getWinner() == 0) {
+				if (newGame.getWinnerNumber() == 0) {
 					scores.get(bestOption).add(0);
 				}
 			}
@@ -1239,14 +1279,15 @@ public class Game {
 		this.tree = new ArrayList<Node>();
 
 		// The initial UCT with an added small value for tie breakers
-		double initialUCT = 5 + random.nextDouble() * 0.00001;
+		double initialUCT = this.initial_UCT + random.nextDouble() * 0.00001;
+		// double initialUCT = 5 + random.nextDouble() * 0.00001;
 		Node root = new Node(new ArrayList<Integer>(), stage, null, new ArrayList<Integer>(), initialUCT);
 		this.tree.add(root);
 		int n = 0;
 		Node bestNode = root;
 
 		// Simulation limit of 1000
-		while (n < 75000) {
+		while (n < 20000) {
 			// selection
 			simulation = game.copy();
 			n++;
@@ -1258,13 +1299,27 @@ public class Game {
 			// While there are children, resolve actions and keep going until we
 			// get the best unexplored one
 			boolean newChildFound = false;
+
 			do {
-				if (bestNode.hasParent() == false) {
-					break;
+
+				if (bestNode == null) {
+					bestNode = root;
+				}
+				if (!bestNode.hasParent()) {
+					if (bestNode.hasChildren()) {
+						newChildFound = true;
+						bestNode = bestNode.selectBestChild(player % 2);
+					} else {
+						newChildFound = false;
+					}
+					// player++;
+					continue;
 				}
 
-				player++;
+				if (!newChildFound)
+					break;
 
+				player++;
 				// If the past bestnode was an attack, we retrieve these
 				// attackers. The attacks will be resolved when blockers have
 				// been declared
@@ -1390,8 +1445,8 @@ public class Game {
 				// be filled with an empty movenode later on
 				if (choices != null) {
 					// Get the hands and fields again
-					Hand hand = simulation.getHand(simulation.getActivePlayer());
-					Field field = simulation.getField(simulation.getActivePlayer());
+					Hand hand = simulation.getHand(currentPlayer + 1);
+					Field field = simulation.getField(currentPlayer + 1);
 
 					// The previous stage consisted of what we like to call
 					// blocking
@@ -1452,9 +1507,17 @@ public class Game {
 			// TODO: select best/random child
 
 			// playout
+
 			simulation.setPlayer1(player1);
 			simulation.setPlayer2(player2);
-			int result = simulation.run();
+			int playerThatWon = simulation.run();
+			int result = 0;
+			if (playerThatWon == this.activePlayer) {
+				result = 1;
+			} else
+				result = -1;
+			// int result = simulation.getWinner(this.getActivePlayer());
+
 			// System.out.println("Playout, winner is: " + result);
 
 			// System.out.println("Show me the money! " + result);
@@ -1464,7 +1527,7 @@ public class Game {
 			Node tmpNode = bestNode;
 			while (tmpNode.getParent() != null) {
 				tmpNode.addScore(result);
-				tmpNode.updateUCT(n);
+				tmpNode.updateUCT(n, c_constant);
 				tmpNode = (Node) tmpNode.getParent();
 				tmp++;
 			}
@@ -1477,7 +1540,8 @@ public class Game {
 
 		bestSet = root.selectBestChild(this.activePlayer - 1).getMove();
 
-		System.out.println(bestSet.size() + " is best set size. Size of tree: " + tree.size());
+		// System.out.println(bestSet.size() + " is best set size. Size of tree:
+		// " + tree.size());
 		return bestSet;
 	}
 
@@ -1543,6 +1607,11 @@ public class Game {
 		}
 
 		for (int i = 0; i < move.size(); i++) {
+			if (move.get(i) >= options.size()) {
+				System.out.println("Help! " + simulation.isOver());
+			}
+		}
+		for (int i = 0; i < move.size(); i++) {
 			creatures.add(options.get(move.get(i)));
 		}
 
@@ -1586,9 +1655,15 @@ public class Game {
 			options = simulation.field2.getCreatures();
 		}
 
+		for (int i = 0; i < move.size(); i++) {
+			if (move.get(i) >= options.size()) {
+				System.out.println("Help! " + simulation.isOver());
+			}
+		}
 		// System.out.println(options.size() + " is the amount of creatures that
-		// player " + simulation.getActivePlayer() + " has. The amount of
-		// attackers that MCTS chose was " + move.size());
+		// player " + simulation.getActivePlayer()
+		// + " has. The amount of attackers that MCTS chose was " +
+		// move.size());
 		for (int i = 0; i < move.size(); i++) {
 			// System.out.println("hERE");
 			creatures.add(options.get(move.get(i)));
@@ -1717,33 +1792,41 @@ public class Game {
 			this.activePlayer = 1;
 		}
 	}
-	//
-	// public static void main(String args[]) {
-	// Player MCTSBoiz = new MonteCarloPlayer("Pimp");
-	// Player RandomBoiz = new RandomPlayer("Scrubbie");
-	//
-	// Game game = new Game(MCTSBoiz, RandomBoiz, 1);
-	// game.setLife1(100);
-	// game.setLife2(5);
-	//
-	// Field field1boiz = new Field();
-	// Field field2boiz = new Field();
-	//
-	// Hand hand1 = new Hand();
-	// // hand1.addCard(new CreatureCard("Ball", 0, 1, 1));
-	// field1boiz.playCreature(new CreatureCard("Piemel", 0, 100, 100));
-	//
-	// Hand hand2 = new Hand();
-	// hand1.addCard(new CreatureCard("Ball", 0, 1, 1));
-	// // field2boiz.playCreature(new CreatureCard("Piemel", 0, 100, 100));
-	//
-	// game.setField1(field1boiz);
-	// game.setHand1(hand1);
-	//
-	// game.setField2(field2boiz);
-	// game.setHand2(hand2);
-	//
-	// game.run();
-	//
-	// }
+
+	public static void main(String args[]) {
+		while (true) {
+			Player MCTSBoiz = new MonteCarloPlayer("Pimp");
+			Player RandomBoiz = new RandomPlayer("Scrubbie");
+
+			Game game = new Game(MCTSBoiz, RandomBoiz, 1, 1, Math.sqrt(2));
+			game.setLife1(100);
+			game.setLife2(5);
+
+			Field field1boiz = new Field();
+			Field field2boiz = new Field();
+
+			Hand hand1 = new Hand();
+			// hand1.addCard(new CreatureCard("Ball", 0, 1, 1));
+			field1boiz.playCreature(new CreatureCard("Piemel", 0, 100, 100));
+
+			Hand hand2 = new Hand();
+			hand2.addCard(new CreatureCard("Ball", 0, 134131231, 113134134));
+			hand2.addCard(new CreatureCard("Ball", 0, 134131231, 113134134));
+			hand2.addCard(new CreatureCard("Ball", 0, 134131231, 113134134));
+			hand2.addCard(new CreatureCard("Ball", 0, 134131231, 113134134));
+			hand2.addCard(new CreatureCard("Ball", 0, 134131231, 113134134));
+			hand2.addCard(new CreatureCard("Ball", 0, 134131231, 113134134));
+
+			// field2boiz.playCreature(new CreatureCard("Piemel", 0, 100, 100));
+
+			game.setField1(field1boiz);
+			game.setHand1(hand1);
+
+			game.setField2(field2boiz);
+			game.setHand2(hand2);
+
+			int winner = game.run();
+			System.out.println(winner);
+		}
+	}
 }

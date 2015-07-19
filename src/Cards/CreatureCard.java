@@ -20,6 +20,10 @@ public class CreatureCard implements Card{
 		
 	}
 	
+	@Override
+	public String toString() {
+		return getName();
+	}
 	
 	@Override
 	public int getType() {
